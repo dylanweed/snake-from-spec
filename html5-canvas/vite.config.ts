@@ -1,5 +1,5 @@
 import { defineConfig } from "vite";
 
 export default defineConfig({
-  base: "/snake-from-spec/html5/",
+  base: "/snake-from-spec/html5-canvas/",
 });

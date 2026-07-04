@@ -4,6 +4,7 @@ A clone of the "Snake" arcade game built as an exercise in specification-oriente
 
 ## Deployed At
   - https://dylanweed.github.io/snake-from-spec/html5/
+  - https://dylanweed.github.io/snake-from-spec/dom/
 
 ## Specifications
 
@@ -22,6 +23,7 @@ Claude-generated (but manually reviewed) functional tests:
 Each subdirectory is a separate implementation of the same specification, so the specs can be exercised in different stacks side by side.
 
 - `html5/`: TypeScript + Canvas implementation, built with Vite. `step()` is tested directly against `spec-step.cases.json`. (One-shotted.)
+- `dom/`: TypeScript + DOM (no canvas) implementation, built with Vite. Same `step()` and test cases as `html5/`; each grid tile is rendered as its own styled `<div>` instead of drawn on a canvas.
 
 ## Deployment Mechanics
 

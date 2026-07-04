@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Snake (DOM)</title>
+    <style>
+      html, body {
+        margin: 0;
+        height: 100%;
+        background: #111;
+        color: #eee;
+        font-family: system-ui, sans-serif;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      #app {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      #hud {
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+        font-size: 1.25rem;
+      }
+      #overlay {
+        position: relative;
+      }
+      #board {
+        --grid-width: 20;
+        --grid-height: 20;
+        display: grid;
+        grid-template-columns: repeat(var(--grid-width), 20px);
+        grid-template-rows: repeat(var(--grid-height), 20px);
+        background: #000;
+        border: 2px solid #444;
+      }
+      .cell {
+        width: 20px;
+        height: 20px;
+        box-sizing: border-box;
+      }
+      .cell.wall {
+        background: #666;
+      }
+      .cell.body {
+        background: #3c9d3c;
+      }
+      .cell.head {
+        background: #7ee87e;
+      }
+      .cell.head-dead {
+        background: #c94b4b;
+      }
+      #game-over {
+        position: absolute;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        background: rgba(0, 0, 0, 0.7);
+        font-size: 1.5rem;
+        gap: 0.5rem;
+      }
+      #game-over.visible {
+        display: flex;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <div id="hud">
+        <span id="score">Score: 0</span>
+      </div>
+      <div id="overlay">
+        <div id="board"></div>
+        <div id="game-over">
+          <div>Game Over</div>
+          <div>Press Space to restart</div>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

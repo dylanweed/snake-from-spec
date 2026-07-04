@@ -1,0 +1,219 @@
+{
+  "_notes": [
+    "Functional test vectors for the step(state) -> state function defined in spec-step.md.",
+    "Each case's `input` is a full world-model state. `expect` is either:",
+    "  { \"result\": \"state\", \"value\": <full expected output state> }",
+    "  { \"result\": \"assertion_error\" }  (input fails validation, per the Step Function's Validation step)",
+    "Groups mirror the Behavior subsections of the spec: a successful move, the three ways a move can kill the snake, validation failures, and the already-dead no-op case.",
+    "step() never revives a dead snake: if the input state has alive=false, step() returns it unchanged (see group `already_dead`)."
+  ],
+  "groups": [
+    {
+      "name": "successful_move",
+      "description": "Candidate tile is open: snake advances, grows, and scores.",
+      "cases": [
+        {
+          "name": "simple_move_grows_and_scores",
+          "description": "Open square ahead: snake advances, leaves a body tile behind, score increments.",
+          "input": {
+            "grid": { "width": 5, "height": 5 },
+            "grid_tiles": [],
+            "snake_pos": { "x": 2, "y": 2 },
+            "snake_next": "UP",
+            "alive": true,
+            "score": 0
+          },
+          "expect": {
+            "result": "state",
+            "value": {
+              "grid": { "width": 5, "height": 5 },
+              "grid_tiles": [{ "x": 2, "y": 2, "type": "SNAKE_BODY" }],
+              "snake_pos": { "x": 2, "y": 1 },
+              "snake_next": "UP",
+              "alive": true,
+              "score": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "death_by_collision",
+      "description": "Candidate tile is occupied by a WALL or SNAKE_BODY: snake dies in place, tiles unchanged.",
+      "cases": [
+        {
+          "name": "move_into_wall_kills_snake",
+          "description": "Candidate tile is a WALL: snake dies in place, tiles unchanged.",
+          "input": {
+            "grid": { "width": 5, "height": 5 },
+            "grid_tiles": [{ "x": 2, "y": 1, "type": "WALL" }],
+            "snake_pos": { "x": 2, "y": 2 },
+            "snake_next": "UP",
+            "alive": true,
+            "score": 3
+          },
+          "expect": {
+            "result": "state",
+            "value": {
+              "grid": { "width": 5, "height": 5 },
+              "grid_tiles": [{ "x": 2, "y": 1, "type": "WALL" }],
+              "snake_pos": { "x": 2, "y": 2 },
+              "snake_next": "UP",
+              "alive": false,
+              "score": 3
+            }
+          }
+        },
+        {
+          "name": "move_into_own_body_kills_snake",
+          "description": "Candidate tile is a SNAKE_BODY tile: snake dies in place, tiles unchanged.",
+          "input": {
+            "grid": { "width": 5, "height": 5 },
+            "grid_tiles": [{ "x": 2, "y": 1, "type": "SNAKE_BODY" }],
+            "snake_pos": { "x": 2, "y": 2 },
+            "snake_next": "UP",
+            "alive": true,
+            "score": 5
+          },
+          "expect": {
+            "result": "state",
+            "value": {
+              "grid": { "width": 5, "height": 5 },
+              "grid_tiles": [{ "x": 2, "y": 1, "type": "SNAKE_BODY" }],
+              "snake_pos": { "x": 2, "y": 2 },
+              "snake_next": "UP",
+              "alive": false,
+              "score": 5
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "death_by_bounds",
+      "description": "Candidate tile falls outside the grid: snake dies in place, tiles unchanged.",
+      "cases": [
+        {
+          "name": "move_out_of_bounds_top_edge_kills_snake",
+          "description": "Snake at y=0 moving UP would leave the grid: dies in place.",
+          "input": {
+            "grid": { "width": 5, "height": 5 },
+            "grid_tiles": [],
+            "snake_pos": { "x": 0, "y": 0 },
+            "snake_next": "UP",
+            "alive": true,
+            "score": 0
+          },
+          "expect": {
+            "result": "state",
+            "value": {
+              "grid": { "width": 5, "height": 5 },
+              "grid_tiles": [],
+              "snake_pos": { "x": 0, "y": 0 },
+              "snake_next": "UP",
+              "alive": false,
+              "score": 0
+            }
+          }
+        },
+        {
+          "name": "move_out_of_bounds_right_edge_kills_snake",
+          "description": "Snake at max x moving RIGHT would leave the grid: dies in place.",
+          "input": {
+            "grid": { "width": 5, "height": 5 },
+            "grid_tiles": [],
+            "snake_pos": { "x": 4, "y": 4 },
+            "snake_next": "RIGHT",
+            "alive": true,
+            "score": 2
+          },
+          "expect": {
+            "result": "state",
+            "value": {
+              "grid": { "width": 5, "height": 5 },
+              "grid_tiles": [],
+              "snake_pos": { "x": 4, "y": 4 },
+              "snake_next": "RIGHT",
+              "alive": false,
+              "score": 2
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "validation_failures",
+      "description": "Input states that violate the Validation step's invariants: step() raises rather than producing a next state.",
+      "cases": [
+        {
+          "name": "validation_rejects_tile_out_of_bounds",
+          "description": "A grid_tiles entry outside [0, width) x [0, height) fails validation.",
+          "input": {
+            "grid": { "width": 5, "height": 5 },
+            "grid_tiles": [{ "x": 5, "y": 0, "type": "WALL" }],
+            "snake_pos": { "x": 0, "y": 0 },
+            "snake_next": "DOWN",
+            "alive": true,
+            "score": 0
+          },
+          "expect": { "result": "assertion_error" }
+        },
+        {
+          "name": "validation_rejects_snake_pos_out_of_bounds",
+          "description": "snake_pos outside grid bounds fails validation.",
+          "input": {
+            "grid": { "width": 5, "height": 5 },
+            "grid_tiles": [],
+            "snake_pos": { "x": -1, "y": 0 },
+            "snake_next": "RIGHT",
+            "alive": true,
+            "score": 0
+          },
+          "expect": { "result": "assertion_error" }
+        },
+        {
+          "name": "validation_rejects_alive_snake_overlapping_tile",
+          "description": "alive=true but snake_pos coincides with an existing tile fails validation.",
+          "input": {
+            "grid": { "width": 5, "height": 5 },
+            "grid_tiles": [{ "x": 2, "y": 2, "type": "SNAKE_BODY" }],
+            "snake_pos": { "x": 2, "y": 2 },
+            "snake_next": "UP",
+            "alive": true,
+            "score": 1
+          },
+          "expect": { "result": "assertion_error" }
+        }
+      ]
+    },
+    {
+      "name": "already_dead",
+      "description": "Input snake is already dead (alive=false): step() is a no-op regardless of what the candidate move would have done.",
+      "cases": [
+        {
+          "name": "dead_snake_state_is_unchanged",
+          "description": "alive=false with snake_pos coinciding with a tile passes validation (the overlap check only applies when alive=true). step() never revives a dead snake, so the output equals the input exactly, with no movement, growth, or scoring evaluated.",
+          "input": {
+            "grid": { "width": 5, "height": 5 },
+            "grid_tiles": [{ "x": 2, "y": 2, "type": "WALL" }],
+            "snake_pos": { "x": 2, "y": 2 },
+            "snake_next": "UP",
+            "alive": false,
+            "score": 1
+          },
+          "expect": {
+            "result": "state",
+            "value": {
+              "grid": { "width": 5, "height": 5 },
+              "grid_tiles": [{ "x": 2, "y": 2, "type": "WALL" }],
+              "snake_pos": { "x": 2, "y": 2 },
+              "snake_next": "UP",
+              "alive": false,
+              "score": 1
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -2,6 +2,11 @@
 
 A clone of the "Snake" arcade game built as an exercise in specification-oriented-development with Claude.
 
+## Deployed At
+  - https://dylanweed.github.io/snake-from-spec/html5/
+
+## Specifications
+
 Game mechanics are exhaustively specified and verifiable with tests to ensure correct implementation.  Claude is
 given more leeway with the game loop and presentation layer.
 
@@ -18,7 +23,7 @@ Each subdirectory is a separate implementation of the same specification, so the
 
 - `html5/`: TypeScript + Canvas implementation, built with Vite. `step()` is tested directly against `spec-step.cases.json`. (One-shotted.)
 
-## Deployment
+## Deployment Mechanics
 
 Pushing to `main` runs `scripts/build-implementations.mjs`, which builds every implementation directory and publishes them to GitHub Pages, each under its own subpath (e.g. `html5/`).
 

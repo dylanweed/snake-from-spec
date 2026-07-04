@@ -26,6 +26,15 @@ Runs on a fixed tick interval (interval value TBD):
 3. If a directional keypress event has arrived from the presentation layer since the last tick, update `snake_next` to that direction before the next `step` call.
 4. Repeat, stopping (or entering a "game over" mode) once `alive` is `false`.
 
+```mermaid
+flowchart LR
+    A[Render state] --> B["step(state)"]
+    B --> C{alive?}
+    C -->|yes| D[Apply pending\nkeypress to snake_next]
+    D --> A
+    C -->|no| E[Game over]
+```
+
 ---
 
 ## HTML5 Presentation and Rendering Layer

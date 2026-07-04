@@ -9,6 +9,10 @@
  * uses one BG palette, the HUD band below it (rows 20-29) uses a second BG
  * palette, so the HUD's colors (white digits, red death alert) don't have
  * to share the playfield's wall/body/head colors.
+ *
+ * Must be compiled with cc65's -Oirs: unoptimized, a single tick's PPU
+ * writes land 15-30 scanlines past the end of vblank instead of comfortably
+ * inside it, visibly tearing the frame (see game_step()).
  */
 
 #include <nes.h>
@@ -47,7 +51,7 @@ static unsigned char snake_x, snake_y;
 static unsigned char next_dir;
 static unsigned char pending_dir;
 static unsigned char alive;
-static unsigned int score;
+static unsigned char score_hundreds, score_tens, score_ones;
 static unsigned char frame_count;
 static unsigned char joy_prev;
 
@@ -74,13 +78,28 @@ static void draw_tile(unsigned char x, unsigned char y, unsigned char tile) {
 }
 
 static void draw_score(void) {
-    unsigned char hundreds = (score / 100) % 10;
-    unsigned char tens = (score / 10) % 10;
-    unsigned char ones = score % 10;
     ppu_addr(0x2000 + (unsigned int)SCORE_ROW * 32);
-    PPU.vram.data = CHR_DIGIT0 + hundreds;
-    PPU.vram.data = CHR_DIGIT0 + tens;
-    PPU.vram.data = CHR_DIGIT0 + ones;
+    PPU.vram.data = CHR_DIGIT0 + score_hundreds;
+    PPU.vram.data = CHR_DIGIT0 + score_tens;
+    PPU.vram.data = CHR_DIGIT0 + score_ones;
+}
+
+/* score only ever increases by 1 per tick, so maintaining it as three
+ * digit counters with carry is enough -- and, critically, is far cheaper
+ * than it looks: cc65's 16-bit division routines (needed for score/100,
+ * /10, %10) cost on the order of 1000 cycles *each*, which alone blows
+ * through the ~2270-cycle vblank window every single tick. This costs a
+ * handful of comparisons instead. */
+static void inc_score(void) {
+    score_ones++;
+    if (score_ones == 10) {
+        score_ones = 0;
+        score_tens++;
+        if (score_tens == 10) {
+            score_tens = 0;
+            score_hundreds++;
+        }
+    }
 }
 
 static void set_alert_row(unsigned char tile) {
@@ -150,7 +169,9 @@ static void reset_game(void) {
     next_dir = DIR_UP;
     pending_dir = DIR_NONE;
     alive = 1;
-    score = 0;
+    score_hundreds = 0;
+    score_tens = 0;
+    score_ones = 0;
     frame_count = 0;
 
     /* See game_step(): VRAM writes need rendering off. This matters here
@@ -166,37 +187,42 @@ static void reset_game(void) {
 /* step(): a direct port of spec-step.md / html5-canvas/src/model/step.ts.
  * A dead snake is never revived -- step() is a no-op once alive is false. */
 static void game_step(void) {
-    unsigned char cx, cy;
+    unsigned char cx, cy, prev_x, prev_y, died;
 
     if (!alive) {
         return;
     }
 
+    /* Every write below (however few) must happen with rendering off: on
+     * real hardware (which jsnes models faithfully) touching $2001, $2005,
+     * or $2006/$2007 outside vblank corrupts the PPU's internal scroll/
+     * address state and visibly tears the frame. Disabling rendering before
+     * any of it runs means whatever scanlines the PPU would have drawn
+     * during that window just keep last frame's (already-correct) content
+     * instead of tearing; re-enabling a bit late is an imperceptible
+     * one-frame freeze, not a visible glitch. */
+    PPU.mask = 0x00;
+
     cx = snake_x + DX[next_dir];
     cy = snake_y + DY[next_dir];
+    died = (cx >= GRID_W || cy >= GRID_H || grid[cy][cx] != TILE_EMPTY);
 
-    /* Every VRAM write below (however few) must happen with rendering off:
-     * writing $2007 while the PPU is actively rendering scrambles the
-     * effective address after only a couple of bytes, since the write
-     * target during rendering is derived from the PPU's internal scroll
-     * counters rather than a simple linear address (real hardware behavior
-     * that jsnes also models). A single tick only touches a handful of
-     * tiles, so the forced-blank flicker this causes is imperceptibly brief. */
-    PPU.mask = 0x00;
-    if (cx >= GRID_W || cy >= GRID_H || grid[cy][cx] != TILE_EMPTY) {
+    if (died) {
         alive = 0;
         set_alert_row(CHR_WALL);
     } else {
         grid[snake_y][snake_x] = TILE_BODY;
-        draw_tile(snake_x, snake_y, CHR_BODY);
-
+        prev_x = snake_x;
+        prev_y = snake_y;
         snake_x = cx;
         snake_y = cy;
-        score++;
+        inc_score();
 
+        draw_tile(prev_x, prev_y, CHR_BODY);
         draw_tile(snake_x, snake_y, CHR_HEAD);
         draw_score();
     }
+
     reset_scroll();
     PPU.mask = 0x0A;
 }
@@ -248,8 +274,6 @@ void main(void) {
 
     while (1) {
         waitvsync();
-        reset_scroll(); /* cc65's runtime touches $2006 on its own each frame; pin scroll every frame, not just on ticks */
-        poll_input();
 
         frame_count++;
         if (frame_count >= TICK_FRAMES) {
@@ -260,5 +284,7 @@ void main(void) {
             }
             game_step();
         }
+        reset_scroll();
+        poll_input();
     }
 }

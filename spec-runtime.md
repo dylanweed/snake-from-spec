@@ -43,4 +43,4 @@ Renders the world model to the screen each tick and translates player input into
 - Capture arrow-key (or WASD) keydown events and forward them to the game loop as directional events.
 - Render a game-over state when `alive` becomes `false`.
 
-Flagging as a stub — let me know if you want this fleshed out (canvas vs. DOM rendering, styling, input handling details, etc.).
+This is a stub and needs to be fleshed out (canvas vs. DOM rendering, styling, input handling details, etc.).

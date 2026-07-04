@@ -16,7 +16,9 @@ Claude-generated (but manually reviewed) functional tests:
 
 Each subdirectory is a separate implementation of the same specification, so the specs can be exercised in different stacks side by side.
 
-- `html5/`: TypeScript + Canvas implementation, built with Vite. `step()` is tested directly against `spec-step.cases.json`. (One-shotted.))
+- `html5/`: TypeScript + Canvas implementation, built with Vite. `step()` is tested directly against `spec-step.cases.json`. (One-shotted.)
+
+## Deployment
 
 Pushing to `main` runs `scripts/build-implementations.mjs`, which builds every implementation directory and publishes them to GitHub Pages, each under its own subpath (e.g. `html5/`).
 

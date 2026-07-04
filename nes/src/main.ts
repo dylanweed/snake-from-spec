@@ -26,6 +26,13 @@ fetch(`${import.meta.env.BASE_URL}game.nes`)
     // grid, so keep the full frame visible instead of clipping it.
     // `ppu` isn't part of jsnes's public NES type, hence the cast.
     (browser.nes as unknown as { ppu: { clipToTvSize: boolean } }).ppu.clipToTvSize = false;
+
+    // Browser.fitInParent() sizes the canvas to the full 256x240 frame via
+    // an inline style, which would override the CSS crop below (#screen
+    // canvas { width: 160% }) since inline styles win over stylesheet rules.
+    // Clear it so the stylesheet's crop takes effect.
+    const canvas = container.querySelector("canvas");
+    canvas?.removeAttribute("style");
   })
   .catch((error: unknown) => {
     statusEl.textContent = `Failed to load ROM: ${String(error)}`;

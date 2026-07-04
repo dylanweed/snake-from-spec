@@ -42,6 +42,13 @@
 #define SCORE_ROW 20
 #define ALERT_ROW 22
 
+/* Show background everywhere, including the leftmost 8 pixels (bit1) --
+ * and also mark sprites as unclipped there (bit2), even though this ROM
+ * never draws sprites: some emulators (jsnes included) black out the
+ * leftmost column whenever *either* clip bit is set, so leaving bit2 at
+ * its "clip" default hides the left border wall regardless of bit1. */
+#define MASK_SHOW_BG 0x0E
+
 static const signed char DX[4] = { 0, 0, -1, 1 };
 static const signed char DY[4] = { -1, 1, 0, 0 };
 static const unsigned char OPPOSITE_DIR[4] = { DIR_DOWN, DIR_UP, DIR_RIGHT, DIR_LEFT };
@@ -181,7 +188,7 @@ static void reset_game(void) {
     draw_score();
     set_alert_row(CHR_BLANK);
     reset_scroll();
-    PPU.mask = 0x0A;
+    PPU.mask = MASK_SHOW_BG;
 }
 
 /* step(): a direct port of spec-step.md / html5-canvas/src/model/step.ts.
@@ -224,7 +231,7 @@ static void game_step(void) {
     }
 
     reset_scroll();
-    PPU.mask = 0x0A;
+    PPU.mask = MASK_SHOW_BG;
 }
 
 /* Mirrors gameLoop.ts: keydown-equivalent direction events are latched into
@@ -270,7 +277,7 @@ void main(void) {
 
     setup_palette();
     setup_attributes();
-    reset_game(); /* leaves rendering enabled (PPU.mask = 0x0A) */
+    reset_game(); /* leaves rendering enabled (PPU.mask = MASK_SHOW_BG) */
 
     while (1) {
         waitvsync();

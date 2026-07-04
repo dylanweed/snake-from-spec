@@ -23,13 +23,20 @@
         padding: 1rem;
       }
       #screen {
-        width: 512px;
+        width: 480px;
         max-width: 90vw;
+        aspect-ratio: 160 / 184;
         background: #000;
         border: 2px solid #444;
+        overflow: hidden;
       }
       #screen canvas {
-        width: 100%;
+        /* The ROM's 20x20 grid plus HUD only occupies the top-left 160x184
+           of the NES's full 256x240 frame; scale the canvas up and let the
+           container's overflow:hidden crop away the unused right/bottom
+           margin instead of showing it as dead space. */
+        width: 160%;
+        display: block;
         image-rendering: pixelated;
       }
       #status {

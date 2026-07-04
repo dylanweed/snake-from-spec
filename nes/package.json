@@ -1,0 +1,19 @@
+{
+  "name": "snake-nes",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:rom": "mkdir -p public && cl65 -t nes -o public/game.nes rom/main.c rom/chr.s",
+    "dev": "npm run build:rom && vite",
+    "build": "npm run build:rom && tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "jsnes": "^2.1.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.3",
+    "vite": "^6.0.0"
+  }
+}

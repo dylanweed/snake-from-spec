@@ -22,6 +22,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+      - name: Install cc65 (ca65/ld65/cl65, for the nes/ implementation)
+        run: sudo apt-get update && sudo apt-get install -y cc65
       - run: node scripts/build-implementations.mjs
       - uses: actions/upload-pages-artifact@v3
         with:

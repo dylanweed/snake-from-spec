@@ -16,7 +16,9 @@ Manually Written Specifications:
  - spec-runtime.md: Game Loop and Presentation Layer
  - spec-step.md: World model and step function
 
-Claude-generated (but manually reviewed) functional tests:
+## Tests
+
+Claude-generated (but manually reviewed) functional tests, verifying implementations against the specifications above:
  - spec-step.cases.json: Functional Test Cases for Step
 
 ## Implementations

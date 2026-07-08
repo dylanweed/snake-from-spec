@@ -13,26 +13,26 @@ This document covers the runtime layer of the Snake game, built on top of the Wo
 
 ### Behavior
 
-The game loop is the conductor: it ticks at a fixed interval, shows the presentation layer the current state, applies the step function, and feeds any pending directional input into the next tick's direction. It also decides when the game has ended.
+The game loop is the conductor: it ticks at a fixed interval, shows the presentation layer the current state, and calls the step function with whatever directional input has arrived from the presentation layer since the last tick (or none, if no new direction has arrived). It also decides when the game has ended.
 
-**Open question:** should a directional input in the *opposite* direction of current travel be rejected (classic Snake behavior, since reversing directly into your own neck is otherwise an instant, unavoidable death) or passed through as-is? Not currently specified.
+Direction handling itself — whether a new_direction is applied, ignored, or overrides the current direction — is `step()`'s concern, per `spec-step.md`, not the game loop's.
 
 ### Spec
 
 Runs on a fixed tick interval (interval value TBD):
 
 1. Pass the current game state to the presentation layer for rendering.
-2. Call `step(state)` to produce the next state, after a fixed per-tick delay.
-3. If a directional input event has arrived from the presentation layer since the last tick, update `snake_next` to that direction before the next `step` call.
+2. Determine `new_direction`: the most recent directional input event from the presentation layer since the last tick, or `null`/empty if none arrived.
+3. Call `step(state, new_direction)` to produce the next state, after a fixed per-tick delay.
 4. Repeat, stopping (or entering a "game over" mode) once `alive` is `false`.
 
 ```mermaid
 flowchart LR
-    A[Render state] --> B["step(state)"]
-    B --> C{alive?}
-    C -->|yes| D[Apply pending\ninput to snake_next]
-    D --> A
-    C -->|no| E[Game over]
+    A[Render state] --> B[Read pending\nnew_direction, if any]
+    B --> C["step(state, new_direction)"]
+    C --> D{alive?}
+    D -->|yes| A
+    D -->|no| E[Game over]
 ```
 
 ---

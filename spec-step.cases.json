@@ -1,11 +1,11 @@
 {
   "_notes": [
-    "Functional test vectors for the step(state) -> state function defined in spec-step.md.",
-    "Each case's `input` is a full world-model state. `expect` is either:",
+    "Functional test vectors for the step(state, new_direction) -> state function defined in spec-step.md.",
+    "Each case's `input` is a full world-model state plus a `new_direction` field: one of \"UP\"/\"DOWN\"/\"LEFT\"/\"RIGHT\", or null if no new direction arrived since the last step. `expect` is either:",
     "  { \"result\": \"state\", \"value\": <full expected output state> }",
     "  { \"result\": \"assertion_error\" }  (input fails validation, per the Step Function's Validation step)",
-    "Groups mirror the Behavior subsections of the spec: a successful move, the three ways a move can kill the snake, validation failures, and the already-dead no-op case.",
-    "step() never revives a dead snake: if the input state has alive=false, step() returns it unchanged (see group `already_dead`)."
+    "Groups mirror the Behavior subsections of the spec: a successful move, the three ways a move can kill the snake, validation failures, new_direction-driven direction changes, and the already-dead no-op case.",
+    "step() never revives a dead snake: if the input state has alive=false, step() returns it unchanged and ignores new_direction entirely (see group `already_dead`)."
   ],
   "groups": [
     {
@@ -20,6 +20,7 @@
             "grid_tiles": [],
             "snake_pos": { "x": 2, "y": 2 },
             "snake_next": "UP",
+            "new_direction": null,
             "alive": true,
             "score": 0
           },
@@ -49,6 +50,7 @@
             "grid_tiles": [{ "x": 2, "y": 1, "type": "WALL" }],
             "snake_pos": { "x": 2, "y": 2 },
             "snake_next": "UP",
+            "new_direction": null,
             "alive": true,
             "score": 3
           },
@@ -72,6 +74,7 @@
             "grid_tiles": [{ "x": 2, "y": 1, "type": "SNAKE_BODY" }],
             "snake_pos": { "x": 2, "y": 2 },
             "snake_next": "UP",
+            "new_direction": null,
             "alive": true,
             "score": 5
           },
@@ -101,6 +104,7 @@
             "grid_tiles": [],
             "snake_pos": { "x": 0, "y": 0 },
             "snake_next": "UP",
+            "new_direction": null,
             "alive": true,
             "score": 0
           },
@@ -124,6 +128,7 @@
             "grid_tiles": [],
             "snake_pos": { "x": 4, "y": 4 },
             "snake_next": "RIGHT",
+            "new_direction": null,
             "alive": true,
             "score": 2
           },
@@ -153,6 +158,7 @@
             "grid_tiles": [{ "x": 5, "y": 0, "type": "WALL" }],
             "snake_pos": { "x": 0, "y": 0 },
             "snake_next": "DOWN",
+            "new_direction": null,
             "alive": true,
             "score": 0
           },
@@ -166,6 +172,7 @@
             "grid_tiles": [],
             "snake_pos": { "x": -1, "y": 0 },
             "snake_next": "RIGHT",
+            "new_direction": null,
             "alive": true,
             "score": 0
           },
@@ -179,25 +186,95 @@
             "grid_tiles": [{ "x": 2, "y": 2, "type": "SNAKE_BODY" }],
             "snake_pos": { "x": 2, "y": 2 },
             "snake_next": "UP",
+            "new_direction": null,
             "alive": true,
             "score": 1
+          },
+          "expect": { "result": "assertion_error" }
+        },
+        {
+          "name": "validation_rejects_invalid_new_direction",
+          "description": "A non-null new_direction that isn't one of the four directions fails validation.",
+          "input": {
+            "grid": { "width": 5, "height": 5 },
+            "grid_tiles": [],
+            "snake_pos": { "x": 2, "y": 2 },
+            "snake_next": "UP",
+            "new_direction": "SIDEWAYS",
+            "alive": true,
+            "score": 0
           },
           "expect": { "result": "assertion_error" }
         }
       ]
     },
     {
+      "name": "new_direction_direction_changes",
+      "description": "A non-null new_direction overrides snake_next for this step before the move is computed; a null new_direction leaves it untouched.",
+      "cases": [
+        {
+          "name": "new_direction_overrides_snake_next_before_move",
+          "description": "snake_next is UP but new_direction is RIGHT: the move uses RIGHT, and the returned state's snake_next is RIGHT.",
+          "input": {
+            "grid": { "width": 5, "height": 5 },
+            "grid_tiles": [],
+            "snake_pos": { "x": 2, "y": 2 },
+            "snake_next": "UP",
+            "new_direction": "RIGHT",
+            "alive": true,
+            "score": 0
+          },
+          "expect": {
+            "result": "state",
+            "value": {
+              "grid": { "width": 5, "height": 5 },
+              "grid_tiles": [{ "x": 2, "y": 2, "type": "SNAKE_BODY" }],
+              "snake_pos": { "x": 3, "y": 2 },
+              "snake_next": "RIGHT",
+              "alive": true,
+              "score": 1
+            }
+          }
+        },
+        {
+          "name": "new_direction_into_wall_kills_snake",
+          "description": "new_direction redirects the snake straight into a wall tile it wasn't already heading toward.",
+          "input": {
+            "grid": { "width": 5, "height": 5 },
+            "grid_tiles": [{ "x": 3, "y": 2, "type": "WALL" }],
+            "snake_pos": { "x": 2, "y": 2 },
+            "snake_next": "UP",
+            "new_direction": "RIGHT",
+            "alive": true,
+            "score": 4
+          },
+          "expect": {
+            "result": "state",
+            "value": {
+              "grid": { "width": 5, "height": 5 },
+              "grid_tiles": [{ "x": 3, "y": 2, "type": "WALL" }],
+              "snake_pos": { "x": 2, "y": 2 },
+              "snake_next": "RIGHT",
+              "alive": false,
+              "score": 4
+            }
+          }
+        }
+      ]
+    },
+    {
       "name": "already_dead",
-      "description": "Input snake is already dead (alive=false): step() is a no-op regardless of what the candidate move would have done.",
+      "description": "Input snake is already dead (alive=false): step() is a no-op regardless of what the candidate move would have done, and regardless of new_direction.",
       "cases": [
         {
           "name": "dead_snake_state_is_unchanged",
-          "description": "alive=false with snake_pos coinciding with a tile passes validation (the overlap check only applies when alive=true). step() never revives a dead snake, so the output equals the input exactly, with no movement, growth, or scoring evaluated.",
+          "description": "alive=false with snake_pos coinciding with a tile passes validation (the overlap check only applies when alive=true). step() never revives a dead snake, so the output equals the input exactly, with no movement, growth, scoring, or new_direction evaluated (note the new_direction is ignored even though it differs from snake_next).",
           "input": {
             "grid": { "width": 5, "height": 5 },
             "grid_tiles": [{ "x": 2, "y": 2, "type": "WALL" }],
             "snake_pos": { "x": 2, "y": 2 },
             "snake_next": "UP",
+            "new_direction": "RIGHT",
             "alive": false,
             "score": 1
           },

@@ -19,10 +19,9 @@ Test vectors for `step()` live alongside this spec in `spec-step.cases.json`.
 
 ### Behavior
 
-The world model captures everything needed to describe the game at a single instant: the grid dimensions, every wall and snake-body tile, the snake's head position and pending direction, whether the snake is still alive, and the current score.
+The world model captures everything needed to describe the game at a single instant. It splits that state into two conceptually different things: `grid_tiles`, the set of hazards the snake can collide with (walls and its own trailing body), and `snake_pos`, the snake's own current position — who it is, not something it could hit. The head is deliberately excluded from `grid_tiles` for this reason: it isn't a hazard to itself. This also means a collision check is a single uniform lookup — "is `candidate_pos` in `grid_tiles`?" — with no special case needed to exclude the head's own square, and no need to scan the whole `grid_tiles` list to find and skip it.
 
 **Notes / open questions:**
-- The head's own position is *not* listed in `grid_tiles`; only trailing body and walls are. Worth confirming this is intended, since collision checks need to treat the head specially.
 - Score only increments on successful moves (see Step Function below) — a move that results in death does not increment it. Confirm this matches intent.
 
 ### Spec
@@ -44,8 +43,8 @@ The world model captures everything needed to describe the game at a single inst
 | Field | Type | Description |
 |---|---|---|
 | `grid` | `{width, height}` | Dimensions of the game grid. |
-| `grid_tiles` | list of `{x, y, type}` | All occupied squares. `type` is `"WALL"` or `"SNAKE_BODY"`. |
-| `snake_pos` | `{x, y}` | Position of the snake's head. |
+| `grid_tiles` | list of `{x, y, type}` | Every hazard square — anything the snake's head would die by moving into. `type` is `"WALL"` or `"SNAKE_BODY"`. Excludes the head's own square; see Behavior above. |
+| `snake_pos` | `{x, y}` | Position of the snake's head — the snake's own identity, not a hazard tile. |
 | `snake_next` | `"UP" \| "DOWN" \| "LEFT" \| "RIGHT"` | Direction the snake will move on the next step. Carried forward unchanged from step to step unless a new_direction overrides it (see Step Function below). |
 | `alive` | `bool` | Whether the snake is still alive. |
 | `score` | `int` | Starts at 0. Incremented by 1 on each successful move. |

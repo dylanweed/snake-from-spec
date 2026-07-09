@@ -2,8 +2,8 @@
  * Snake, ported to 6502 C for the NES (compiled with cc65's `nes` target).
  *
  * Mirrors spec-step.md's world model and step() function, and
- * spec-runtime.md's game loop and opposite-direction rejection rule, using
- * the same 20x20 grid and ~150ms tick interval as the other implementations.
+ * spec-runtime.md's game loop, using the same 20x20 grid and ~150ms tick
+ * interval as the other implementations.
  *
  * Rendering is background-tile only: the playfield (nametable rows 0-19)
  * uses one BG palette, the HUD band below it (rows 20-29) uses a second BG
@@ -51,7 +51,6 @@
 
 static const signed char DX[4] = { 0, 0, -1, 1 };
 static const signed char DY[4] = { -1, 1, 0, 0 };
-static const unsigned char OPPOSITE_DIR[4] = { DIR_DOWN, DIR_UP, DIR_RIGHT, DIR_LEFT };
 
 static unsigned char grid[GRID_H][GRID_W];
 static unsigned char snake_x, snake_y;
@@ -235,15 +234,16 @@ static void game_step(void) {
 }
 
 /* Mirrors gameLoop.ts: keydown-equivalent direction events are latched into
- * pending_dir (rejecting a reversal of the currently-effective direction),
- * and applied to next_dir at the next tick boundary. Start is edge-detected
- * against the previous frame's controller reading so a held Start button
- * doesn't restart every single frame. */
+ * pending_dir and applied to next_dir at the next tick boundary. Direction
+ * handling (including whether a reversal is applied, ignored, or overrides
+ * the current direction) is step()'s / game_step()'s concern, not this
+ * layer's -- see spec-runtime.md. Start is edge-detected against the
+ * previous frame's controller reading so a held Start button doesn't
+ * restart every single frame. */
 static void poll_input(void) {
     unsigned char v = joy_read(JOY_1);
     unsigned char pressed = v & (unsigned char)~joy_prev;
     unsigned char dir = DIR_NONE;
-    unsigned char effective;
 
     joy_prev = v;
 
@@ -258,10 +258,7 @@ static void poll_input(void) {
     }
 
     if (dir != DIR_NONE) {
-        effective = (pending_dir != DIR_NONE) ? pending_dir : next_dir;
-        if (dir != OPPOSITE_DIR[effective]) {
-            pending_dir = dir;
-        }
+        pending_dir = dir;
     }
 
     if (JOY_START(pressed)) {

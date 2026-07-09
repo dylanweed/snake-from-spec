@@ -3,13 +3,6 @@ import type { Direction, GameState } from "../model/types";
 
 const TICK_INTERVAL_MS = 150;
 
-const OPPOSITE: Record<Direction, Direction> = {
-  UP: "DOWN",
-  DOWN: "UP",
-  LEFT: "RIGHT",
-  RIGHT: "LEFT",
-};
-
 export class GameLoop {
   private state: GameState;
   private pendingDirection: Direction | null = null;
@@ -36,20 +29,12 @@ export class GameLoop {
   }
 
   queueDirection(direction: Direction): void {
-    const currentDirection = this.pendingDirection ?? this.state.snake_next;
-    if (direction === OPPOSITE[currentDirection]) {
-      return;
-    }
     this.pendingDirection = direction;
   }
 
   private tick(): void {
-    if (this.pendingDirection !== null) {
-      this.state = { ...this.state, snake_next: this.pendingDirection };
-      this.pendingDirection = null;
-    }
-
-    this.state = step(this.state);
+    this.state = step(this.state, this.pendingDirection);
+    this.pendingDirection = null;
     this.onTick(this.state);
 
     if (!this.state.alive) {

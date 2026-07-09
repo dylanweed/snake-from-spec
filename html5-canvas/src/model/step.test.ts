@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { step } from "./step";
-import type { GameState } from "./types";
+import type { Direction, GameState } from "./types";
 import cases from "../../../spec-step.cases.json";
 
 interface Case {
   name: string;
   description: string;
-  input: GameState;
+  input: GameState & { new_direction: Direction | null };
   expect: { result: "state"; value: GameState } | { result: "assertion_error" };
 }
 
@@ -23,10 +23,11 @@ describe("step()", () => {
     describe(group.name, () => {
       for (const testCase of group.cases) {
         it(testCase.name, () => {
+          const { new_direction, ...state } = testCase.input;
           if (testCase.expect.result === "assertion_error") {
-            expect(() => step(testCase.input)).toThrow();
+            expect(() => step(state, new_direction)).toThrow();
           } else {
-            expect(step(testCase.input)).toEqual(testCase.expect.value);
+            expect(step(state, new_direction)).toEqual(testCase.expect.value);
           }
         });
       }

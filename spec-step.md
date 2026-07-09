@@ -59,7 +59,7 @@ The world model captures everything needed to describe the game at a single inst
 
 Given a game state and an optional new_direction, the step function first checks that the state is internally consistent, then advances it by one step: if a new_direction was supplied, it becomes the snake's direction of travel for this step, overriding whatever `snake_next` already held; if no new_direction was supplied, the snake continues in its existing direction. The snake then attempts to move in that direction, and either dies (bounds violation or collision) or moves forward, grows by one tile, and scores a point.
 
-**Open question:** should a new_direction in the *opposite* direction of current travel be rejected (classic Snake behavior, since reversing directly into your own neck is otherwise an instant, unavoidable death) or applied as-is? Not currently specified.
+A new_direction in the *opposite* direction of current travel is applied as-is, not rejected: unlike classic Snake, reversing directly into your own neck is a legal move, and an instant, unavoidable death. `step()` has no notion of "current travel" independent of `snake_next`, so rejecting a reversal would mean adding that state and a special case rather than reusing the same override in step 1 below.
 
 ### Spec
 

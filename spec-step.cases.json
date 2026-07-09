@@ -259,6 +259,30 @@
               "score": 4
             }
           }
+        },
+        {
+          "name": "new_direction_reversal_into_neck_kills_snake",
+          "description": "new_direction is the exact opposite of snake_next: applied as-is (not rejected), so the candidate move lands on the snake's own trailing body tile and it dies.",
+          "input": {
+            "grid": { "width": 5, "height": 5 },
+            "grid_tiles": [{ "x": 2, "y": 3, "type": "SNAKE_BODY" }],
+            "snake_pos": { "x": 2, "y": 2 },
+            "snake_next": "UP",
+            "new_direction": "DOWN",
+            "alive": true,
+            "score": 3
+          },
+          "expect": {
+            "result": "state",
+            "value": {
+              "grid": { "width": 5, "height": 5 },
+              "grid_tiles": [{ "x": 2, "y": 3, "type": "SNAKE_BODY" }],
+              "snake_pos": { "x": 2, "y": 2 },
+              "snake_next": "DOWN",
+              "alive": false,
+              "score": 3
+            }
+          }
         }
       ]
     },

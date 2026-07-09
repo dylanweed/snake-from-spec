@@ -6,7 +6,7 @@ import cases from "../../../spec-step.cases.json";
 interface Case {
   name: string;
   description: string;
-  input: GameState & { new_direction: Direction | null };
+  input: { state: GameState; new_direction: Direction | null };
   expect: { result: "state"; value: GameState } | { result: "assertion_error" };
 }
 
@@ -23,7 +23,7 @@ describe("step()", () => {
     describe(group.name, () => {
       for (const testCase of group.cases) {
         it(testCase.name, () => {
-          const { new_direction, ...state } = testCase.input;
+          const { state, new_direction } = testCase.input;
           if (testCase.expect.result === "assertion_error") {
             expect(() => step(state, new_direction)).toThrow();
           } else {
